@@ -10,12 +10,13 @@
 #define     E_OK        0
 #define     ENABLE      1
 #define     DISABLE     0
+#define     MAX_SIZE    1024
 
 
 int         ec          =   E_OK;
 
 int         fOptions    =   DISABLE;
-int         fBackground =   ENABLE;
+int         fBackground =   DISABLE;
 
 char *      executablePath;
 char *      optionsBuffer;
@@ -49,8 +50,8 @@ main(int argc, char *argv[])
     
     return ec;
     PRINT_ERROR:
-        char buffer[1024];
-        snprintf(buffer, 1024, "Error Code of C program: %d", errno);
+        char buffer[MAX_SIZE];
+        snprintf(buffer, MAX_SIZE, "Error Code of C program: %d", errno);
         ec = write(0, buffer, strlen(buffer));
         if (ec == -1)
             return errno;
@@ -162,14 +163,14 @@ ExecuteInForeground(char *options)
         
     }
 
-    char buffer[1024];
-    snprintf(buffer, 1024, "%s - %d", "Process ID of Child", pid);
+    char buffer[MAX_SIZE];
+    snprintf(buffer, MAX_SIZE, "%s - %d", "Process ID of Child", pid);
     ec = write(0, buffer, strlen(buffer));
     if (ec == -1)
         return errno;
     if (retVal != 0)
     {
-        snprintf(buffer, 1024, "%s - %d", "Exit Code of Child: ", retVal);
+        snprintf(buffer, MAX_SIZE, "%s - %d", "Exit Code of Child: ", retVal);
         ec = write(0, buffer, strlen(buffer));
         if (ec == -1)
             return errno;
@@ -192,8 +193,8 @@ ExecuteInBackground(char * options)
     }
     else
     {
-        char buffer[1024];
-        snprintf(buffer, 1024, "%s - %d", "Process ID of Child", pid);
+        char buffer[MAX_SIZE];
+        snprintf(buffer, MAX_SIZE, "%s - %d", "Process ID of Child", pid);
         ec = write(0, buffer, strlen(buffer));
         if (ec == -1)
             return errno;
