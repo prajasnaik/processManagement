@@ -27,6 +27,8 @@ int         PerformOperations       ();
 int         ExecuteInForeground     (char *);
 int         ExecuteInBackground     (char *);
 char **     VectorizeString         (char *, char *);
+int         PrintError              (int );
+
 
 // Main function
 int 
@@ -34,9 +36,18 @@ main(int argc, char *argv[])
 {
     for (int i = 0; i < argc; i ++)
     {
-        int ec = write(0, argv[i], strlen(argv[i]));
+        ec = write(0, argv[i], strlen(argv[i]));
         if (ec == -1)
-            goto PRINT_ERROR;
+        {
+            ec = PrintError(errno);
+            return ec;
+        }   
+        ec = write(0, " ", 1);
+        if (ec == -1)
+        {
+            ec = PrintError(errno);
+            return ec;
+        }
     }
     if (argc == 1)
             ec = Help();
@@ -44,20 +55,20 @@ main(int argc, char *argv[])
     {        
         ec = ProcessCommandLine(argv, argc);
         if (ec != E_OK)
-            goto PRINT_ERROR;
+        {
+            ec = PrintError(ec);
+            return ec;
+        }
         ec = PerformOperations();
+        if (ec != E_OK)
+        {
+            ec = PrintError(ec);
+            return ec;
+        }
     }
     
-    return ec;
-    PRINT_ERROR:
-        char buffer[MAX_SIZE];
-        snprintf(buffer, MAX_SIZE, "Error Code of C program: %d", errno);
-        ec = write(0, buffer, strlen(buffer));
-        if (ec == -1)
-            return errno;
-        return E_OK;
+    return ec;       
 }
-
 
 // function: ProcessCommandLine
 //      This function takes the command line arguments and appropriately sets 
@@ -78,7 +89,7 @@ ProcessCommandLine(char *commandLineArguments[], int argCount)
         case 'e':
             if(argno + 1 == argCount)
             {
-                return 3;
+                return E_GENERAL;
             }
             executablePath = commandLineArguments[argno + 1];
             argno += 2;
@@ -164,18 +175,18 @@ ExecuteInForeground(char *options)
     }
 
     char buffer[MAX_SIZE];
-    snprintf(buffer, MAX_SIZE, "%s - %d", "Process ID of Child", pid);
+    snprintf(buffer, MAX_SIZE, "\n%s - %d", "Process ID of Child", pid);
     ec = write(0, buffer, strlen(buffer));
     if (ec == -1)
         return errno;
     if (retVal != 0)
     {
-        snprintf(buffer, MAX_SIZE, "%s - %d", "Exit Code of Child: ", retVal);
+        snprintf(buffer, MAX_SIZE, "\n%s - %d", "Exit Code of Child: ", retVal);
         ec = write(0, buffer, strlen(buffer));
         if (ec == -1)
             return errno;
-        ec = E_OK;
     }
+    ec = E_OK;
     return ec;
 }
 
@@ -194,7 +205,7 @@ ExecuteInBackground(char * options)
     else
     {
         char buffer[MAX_SIZE];
-        snprintf(buffer, MAX_SIZE, "%s - %d", "Process ID of Child", pid);
+        snprintf(buffer, MAX_SIZE, "\n%s - %d", "Process ID of Child", pid);
         ec = write(0, buffer, strlen(buffer));
         if (ec == -1)
             return errno;
@@ -241,4 +252,15 @@ VectorizeString(char *optionsString, char *path)
 int Help()
 {
     return 0;
+}
+
+int
+PrintError(int errorCode)
+{
+    char buffer[MAX_SIZE];
+    snprintf(buffer, MAX_SIZE, "\nError Code of C program: %d", errorCode);
+    ec = write(0, buffer, strlen(buffer));
+    if (ec == -1)
+        return errno;
+    return E_OK;
 }
