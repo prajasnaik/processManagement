@@ -59,6 +59,12 @@ main(int argc, char *argv[])
             return ec;
         }
     }
+    ec = write(STDOUT_FILENO, "\n\n", 2);
+    if (ec == E_GENERAL)
+    {
+        ec = PrintError(errno);
+        return ec;
+    }   
     if (argc == 1)
     {
         ec = Help(); //Help is called if no options are given
@@ -136,7 +142,7 @@ ProcessCommandLine(char *commandLineArguments[], int argCount)
     } 
     if(!fExecutablePath)
     {
-        char *buf = "\nNo executable path specified, please use -e flag to provide path.";
+        char *buf = "\nNo executable path specified, please use -e flag to provide path.\n";
         ec = write(STDOUT_FILENO, buf, strlen(buf));
         if (ec == E_GENERAL)
         {
@@ -212,17 +218,16 @@ ExecuteInForeground(char *options)
                 retVal = WEXITSTATUS(wstatus); //finds exit status of child if not 0
             }
         }
-        
     }
 
     char buffer[MAX_SIZE];
-    snprintf(buffer, MAX_SIZE, "\n%s - %d", "Process ID of Child", pid);
+    snprintf(buffer, MAX_SIZE, "\n%s - %d\n", "Process ID of Child", pid);
     ec = write(STDOUT_FILENO, buffer, strlen(buffer));
     if (ec == E_GENERAL)
         return errno;
     if (retVal != E_OK)
     {
-        snprintf(buffer, MAX_SIZE, "\n%s - %d", "Exit Code of Child: ", retVal);
+        snprintf(buffer, MAX_SIZE, "\n%s - %d\n", "Exit Code of Child", retVal);
         ec = write(0, buffer, strlen(buffer));
         if (ec == -1)
             return errno;
@@ -252,7 +257,7 @@ ExecuteInBackground(char * options)
     else
     {
         char buffer[MAX_SIZE];
-        snprintf(buffer, MAX_SIZE, "\n%s - %d", "Process ID of Child", pid);
+        snprintf(buffer, MAX_SIZE, "\n%s - %d\n", "Process ID of Child", pid);
         ec = write(0, buffer, strlen(buffer));
         if (ec == E_GENERAL)
             return errno;
@@ -279,23 +284,18 @@ VectorizeString(char *optionsString, char *path)
         options[1] = NULL;
         return options;
     }
-    char *testString = (char *) calloc(strlen(optionsString), 1); //gets a new character array
-    for (int i = 0; i < strlen(optionsString); i ++)
-    {
-        testString[i] = optionsString[i]; //sets the new array equal to the old one
-    }
     int i = 0;
     int elementCount = 1; //Set to one because an array without spaces still has one element
-    int length = strlen(testString + 1); // 
+    int length = strlen(optionsString + 1); // 
     for (i = 0; i < length; i ++)
     {
-        if(testString[i] == ' ')
+        if(optionsString[i] == ' ')
             elementCount++; //checks for number of spaces in the array
     }
 
     char **options = (char **) calloc(elementCount + 2, sizeof(char *)); // Is + 2 because of the addition of the path at the start and the null character at the end
     options[0] = path;
-    char * token = strtok(testString, " "); //splits the string on spaces and appends to argument array
+    char * token = strtok(optionsString, " "); //splits the string on spaces and appends to argument array
     i = 1;
     while( token != NULL ) {
         options[i++] = token; 
@@ -329,7 +329,7 @@ int
 PrintError(int errorCode)
 {
     char buffer[MAX_SIZE];
-    snprintf(buffer, MAX_SIZE, "\nError Code of C program: %d", errorCode);
+    snprintf(buffer, MAX_SIZE, "\nError Code of C program: %d\n", errorCode);
     ec = write(STDOUT_FILENO, buffer, strlen(buffer));
     if (ec == E_GENERAL)
         return errno;
